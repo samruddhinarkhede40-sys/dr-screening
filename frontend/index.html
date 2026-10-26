@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clinical AI Retinopathy Screening Portal</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 2rem; }
+    .container { max-width: 1240px; margin: 0 auto; }
+    header { border-bottom: 1px solid #1e293b; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; }
+    h1 { margin: 0; font-size: 1.7rem; color: #38bdf8; font-weight: 700; letter-spacing: -0.5px; }
+    p.sub { color: #64748b; margin: 0.3rem 0 0 0; font-size: 0.9rem; }
+    .badge-live { background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+    .grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+    .panel { background: #131d31; padding: 1.5rem; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.3rem; margin-top: 1rem; text-transform: uppercase; }
+    input, select { width: 100%; padding: 0.65rem; background: #0b0f19; border: 1px solid #2d3b55; color: #fff; border-radius: 6px; font-size: 0.9rem; }
+    input[type="file"] { border: 1px dashed #38bdf8; padding: 1rem; cursor: pointer; }
+    
+    button.btn-primary { width: 100%; margin-top: 1.5rem; padding: 0.85rem; background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; }
+    button.btn-primary:hover { opacity: 0.95; }
+
+    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .img-box { background: #0b0f19; padding: 0.75rem; border-radius: 8px; border: 1px solid #1e293b; min-height: 270px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+    .img-box img { max-width: 100%; max-height: 250px; border-radius: 6px; object-fit: contain; }
+    .img-tag { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; color: #94a3b8; }
+
+    .alert-banner { display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; }
+    .alert-warn { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b; }
+    .alert-ok { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; }
+
+    .diagnostic-card { margin-top: 1.25rem; background: #0b0f19; border-radius: 10px; border: 1px solid #1e293b; padding: 1.25rem; display: none; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 0.75rem; }
+    .severity-tag { padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+    .tag-high { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+    .tag-moderate { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+    .tag-low { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+
+    .meter-container { margin: 1rem 0; }
+    .meter-bar { width: 100%; height: 8px; background: #1e293b; border-radius: 9999px; overflow: hidden; margin-top: 6px; }
+    .meter-fill { height: 100%; border-radius: 9999px; transition: width 0.8s ease; }
+
+    .metric-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.25rem 0; }
+    .tile { background: #131d31; border: 1px solid #1e293b; padding: 0.75rem; border-radius: 8px; text-align: center; }
+    .tile-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; }
+    .tile-val { font-size: 1rem; font-weight: 700; color: #f8fafc; margin-top: 4px; }
+
+    /* New Fundus & Vascular Pathology Styles */
+    .clinical-section { margin-top: 1.25rem; background: #131d31; border: 1px solid #1e293b; border-radius: 8px; padding: 1rem; }
+    .section-title { font-size: 0.8rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
+    .clinical-text { font-size: 0.9rem; color: #cbd5e1; line-height: 1.45; margin: 0; }
+    
+    .vessel-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
+    .vessel-card { background: #0b0f19; border: 1px solid #1e293b; border-radius: 6px; padding: 0.75rem; }
+    .vessel-name { font-size: 0.82rem; font-weight: 700; color: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+    .vessel-status { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .status-High, .status-Critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .status-Moderate, .status-Guarded { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .status-Mild, .status-Intact, .status-Stable { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .vessel-desc { font-size: 0.78rem; color: #94a3b8; margin-top: 0.35rem; line-height: 1.35; }
+
+    .rec-box { padding: 0.85rem 1rem; border-radius: 6px; margin-top: 1rem; }
+    .rec-box-high { background: rgba(239, 68, 68, 0.08); border-left: 3px solid #ef4444; }
+    .rec-box-moderate { background: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; }
+    .rec-box-low { background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; }
+
+    /* Persistent DB Table Styles */
+    .history-panel { margin-top: 2rem; background: #131d31; border-radius: 12px; border: 1px solid #1e293b; padding: 1.5rem; }
+    .table-container { overflow-x: auto; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 800px; }
+    th, td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid #1e293b; }
+    th { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; background: #0f172a; }
+    tr:hover { background: rgba(56, 189, 248, 0.04); }
+    .btn-sm { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; }
+    .btn-sm:hover { background: #334155; }
+    .btn-danger { color: #ef4444; border-color: rgba(239, 68, 68, 0.4); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Explainable AI for Diabetic Retinopathy Screening</h1>
+        <p class="sub">Fundus microvascular lesion localization & anatomical vascular analysis</p>
+      </div>
+      <span class="badge-live">SQLite Engine Active</span>
+    </header>
+
+    <div class="grid">
+      <div class="panel">
+        <h3 style="margin-top:0;">Patient Intake</h3>
+        <label>Patient ID</label>
+        <input type="text" id="patientId" value="PAT-1082">
+
+        <label>Patient Age</label>
+        <input type="number" id="age" value="58">
+
+        <label>Selected Eye Examined</label>
+        <select id="eye">
+          <option>Left Eye (OS)</option>
+          <option>Right Eye (OD)</option>
+        </select>
+
+        <label>Retinal Fundus Image</label>
+        <input type="file" id="imageInput" accept="image/*">
+
+        <button class="btn-primary" onclick="submitScan()">Run Diagnostic Screening</button>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0;">Visual Evidence & Morphological Analysis</h3>
+        
+        <div class="results-grid">
+          <div class="img-box">
+            <span class="img-tag">Input Fundus Scan</span>
+            <span id="origLabel" style="color:#64748b;">No scan uploaded</span>
+            <img id="origPreview" style="display:none;">
+          </div>
+          <div class="img-box">
+            <span class="img-tag">Grad-CAM Heatmap</span>
+            <span id="heatLabel" style="color:#64748b;">Heatmap will appear here</span>
+            <img id="heatPreview" style="display:none;">
+          </div>
+        </div>
+
+        <div class="alert-banner" id="eyeAlert"></div>
+
+        <div class="diagnostic-card" id="diagnosticCard">
+          <div class="card-top">
+            <div>
+              <span style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase;">Staging Assessment</span>
+              <div id="resStage" style="font-size:1.15rem; font-weight:700; color:#f8fafc; margin-top:2px;"></div>
+            </div>
+            <span id="resBadge" class="severity-tag"></span>
+          </div>
+
+          <div class="meter-container">
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+              <span style="color:#94a3b8;">Diabetic Retinopathy Risk Probability</span>
+              <span id="resConfText" style="font-weight:700;">0%</span>
+            </div>
+            <div class="meter-bar">
+              <div class="meter-fill" id="meterFill" style="width:0%;"></div>
+            </div>
+          </div>
+
+          <div class="metric-tiles">
+            <div class="tile">
+              <div class="tile-label">Lesion Density</div>
+              <div class="tile-val" id="tileDensity">0%</div>
+            </div>
+            <div class="tile">
+              <div class="tile-label">Anatomical Lateral</div>
+              <div class="tile-val" id="tileDetectedEye">—</div>
+            </div>
+            <div class="tile">
+              <div class="tile-label">Urgency Tier</div>
+              <div class="tile-val" id="tileUrgency">—</div>
+            </div>
+          </div>
+
+          <!-- Fundus Morphology Clinical Report -->
+          <div class="clinical-section">
+            <div class="section-title">Fundus Examination Summary</div>
+            <p class="clinical-text" id="descFundus"></p>
+            <p class="clinical-text" id="descVein" style="margin-top:0.4rem; font-weight:600; color:#38bdf8;"></p>
+          </div>
+
+          <!-- Anatomical Vessel Damage Breakdown -->
+          <div class="clinical-section">
+            <div class="section-title">Vascular Arcade & Capillary Bed Breakdown</div>
+            <div class="vessel-list" id="vesselList"></div>
+          </div>
+
+          <div class="rec-box" id="recBox">
+            <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase;" id="recTitle">Clinical Recommendation</div>
+            <p id="resRec" style="margin:4px 0 0 0; font-size:0.9rem; color:#cbd5e1;"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SQLite Database Records Section -->
+    <div class="history-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h3 style="margin:0; font-size:1.15rem; color:#38bdf8;">Screening Registry (SQLite Database)</h3>
+          <span style="color:#64748b; font-size:0.8rem;">Records persist across page refreshes and server reboots</span>
+        </div>
+        <div>
+          <button class="btn-sm" onclick="loadRecords()">↻ Refresh Registry</button>
+          <button class="btn-sm btn-danger" onclick="clearAllRecords()">Clear History</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Record #</th>
+              <th>Timestamp</th>
+              <th>Patient ID</th>
+              <th>Age</th>
+              <th>Examined Eye</th>
+              <th>Detected Eye</th>
+              <th>Diagnosis Stage</th>
+              <th>DR Risk Score</th>
+              <th>Lesion Density</th>
+              <th>Action Urgency</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody">
+            <tr><td colspan="10" style="text-align:center; color:#64748b;">Loading stored records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const origPreview = document.getElementById('origPreview');
+    const origLabel = document.getElementById('origLabel');
+
+    imageInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        origPreview.src = URL.createObjectURL(file);
+        origPreview.style.display = 'block';
+        origLabel.style.display = 'none';
+      }
+    });
+
+    async function loadRecords() {
+      try {
+        const res = await fetch('/records');
+        const records = await res.json();
+        const tbody = document.getElementById('recordsBody');
+        tbody.innerHTML = '';
+
+        if (!records || records.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#64748b; padding:1.5rem;">No screenings stored yet. Run a screening above to persist data.</td></tr>';
+          return;
+        }
+
+        records.forEach(r => {
+          const tr = document.createElement('tr');
+          const isSevere = r.stage.includes('Severe') || r.stage.includes('Stage 3');
+          const isHealthy = r.stage.includes('Normal');
+          const statusColor = isHealthy ? '#10b981' : isSevere ? '#ef4444' : '#f59e0b';
+
+          tr.innerHTML = `
+            <td style="color:#64748b; font-weight:600;">#${r.id}</td>
+            <td style="color:#94a3b8; font-size:0.8rem;">${r.timestamp}</td>
+            <td style="font-weight:700; color:#38bdf8;">${r.patient_id}</td>
+            <td>${r.age} yrs</td>
+            <td>${r.input_eye}</td>
+            <td>${r.detected_eye}</td>
+            <td style="font-weight:600; color:${statusColor};">${r.stage}</td>
+            <td><b>${r.confidence}%</b></td>
+            <td>${r.lesion_density}%</td>
+            <td><span style="color:${statusColor}; font-weight:700;">${r.urgency}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Could not fetch database records:", err);
+      }
+    }
+
+    async function clearAllRecords() {
+      if (!confirm("Are you sure you want to clear all screening records from the database?")) return;
+      try {
+        await fetch('/records/clear', { method: 'DELETE' });
+        loadRecords();
+      } catch (err) {
+        alert("Failed to clear records: Backend unreachable.");
+      }
+    }
+
+    async function submitScan() {
+      const file = imageInput.files[0];
+      if (!file) {
+        alert("Please select a retinal image first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('patient_id', document.getElementById('patientId').value);
+      formData.append('age', document.getElementById('age').value);
+      formData.append('eye', document.getElementById('eye').value);
+      formData.append('file', file);
+
+      const heatPreview = document.getElementById('heatPreview');
+      const heatLabel = document.getElementById('heatLabel');
+      const diagnosticCard = document.getElementById('diagnosticCard');
+      const eyeAlert = document.getElementById('eyeAlert');
+
+      heatLabel.innerText = "Extracting vascular mask & calculating CAM...";
+      heatLabel.style.display = 'block';
+      heatPreview.style.display = 'none';
+
+      try {
+        const res = await fetch('/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        heatPreview.src = data.heatmap_image;
+        heatPreview.style.display = 'block';
+        heatLabel.style.display = 'none';
+
+        eyeAlert.style.display = 'block';
+        if (data.eye_match) {
+          eyeAlert.className = 'alert-banner alert-ok';
+          eyeAlert.innerHTML = `✓ Anatomical Match Confirmed: Optic Disc landmark aligns with <b>${data.detected_eye}</b>.`;
+        } else {
+          eyeAlert.className = 'alert-banner alert-warn';
+          eyeAlert.innerHTML = `⚠ Landmark Discrepancy: Intake specified <b>${data.input_eye}</b>, but AI anatomical analysis detected <b>${data.detected_eye}</b>.`;
+        }
+
+        document.getElementById('resStage').innerText = data.stage;
+        document.getElementById('resConfText').innerText = data.confidence + "%";
+        
+        const meterFill = document.getElementById('meterFill');
+        meterFill.style.width = data.confidence + "%";
+
+        document.getElementById('tileDensity').innerText = data.lesion_density + "%";
+        document.getElementById('tileDetectedEye').innerText = data.detected_eye;
+        document.getElementById('tileUrgency').innerText = data.urgency;
+        document.getElementById('resRec').innerText = data.recommendation;
+
+        // Render Fundus Clinical Summary
+        document.getElementById('descFundus').innerText = data.fundus_desc;
+        document.getElementById('descVein').innerText = "Vascular Finding: " + data.primary_vein_note;
+
+        // Render Individual Vessel Arcades
+        const vesselList = document.getElementById('vesselList');
+        vesselList.innerHTML = '';
+        data.vessel_breakdown.forEach(v => {
+          const card = document.createElement('div');
+          card.className = 'vessel-card';
+          card.innerHTML = `
+            <div class="vessel-name">
+              <span>${v.vessel}</span>
+              <span class="vessel-status status-${v.damage_level.split(' ')[0]}">${v.damage_level}</span>
+            </div>
+            <div class="vessel-desc">${v.finding}</div>
+          `;
+          vesselList.appendChild(card);
+        });
+
+        const badge = document.getElementById('resBadge');
+        const recBox = document.getElementById('recBox');
+
+        if (data.severity_tier === "low") {
+          badge.className = "severity-tag tag-low";
+          badge.innerText = "Normal / Low Risk";
+          meterFill.style.background = "#10b981";
+          recBox.className = "rec-box rec-box-low";
+          document.getElementById('recTitle').style.color = "#10b981";
+        } else if (data.severity_tier === "moderate") {
+          badge.className = "severity-tag tag-moderate";
+          badge.innerText = "Moderate NPDR";
+          meterFill.style.background = "#f59e0b";
+          recBox.className = "rec-box rec-box-moderate";
+          document.getElementById('recTitle').style.color = "#f59e0b";
+        } else {
+          badge.className = "severity-tag tag-high";
+          badge.innerText = "Severe / Proliferative";
+          meterFill.style.background = "#ef4444";
+          recBox.className = "rec-box rec-box-high";
+          document.getElementById('recTitle').style.color = "#ef4444";
+        }
+
+        diagnosticCard.style.display = 'block';
+        await loadRecords();
+
+      } catch (err) {
+        alert("Backend server not responding. Verify Uvicorn is active on port 8000.");
+        heatLabel.innerText = "Error running analysis";
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadRecords);
+  </script>
+</body>
+</html>
